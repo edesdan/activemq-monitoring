@@ -1,0 +1,16 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="ghibli-activemq-monitoring-agent:war exploded">
+    <output-path>$PROJECT_DIR$/activemq-mon-app-javaee/target/ghibli-activemq-monitoring-agent</output-path>
+    <root id="root">
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="ghibli-activemq-monitoring-agent" />
+        </element>
+      </element>
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/activemq-mon-app-javaee/target/ghibli-activemq-monitoring-agent/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="javaee-facet-resources" facet="ghibli-activemq-monitoring-agent/web/Web" />
+    </root>
+  </artifact>
+</component>

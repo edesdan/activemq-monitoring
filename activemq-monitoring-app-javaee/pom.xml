@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.edesdan.activemq.monitoring</groupId>
+    <artifactId>activemq-monitoring-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>activemq-monitoring-app</artifactId>
+  <name>activemq-monitoring-app</name>
+  <description>ActiveMQ Monitoring App (JavaEE)</description>
+  <packaging>war</packaging>
+
+  <properties>
+    <org.codehaus.groovy.version>2.4.5</org.codehaus.groovy.version>
+    <failOnMissingWebXml>false</failOnMissingWebXml>
+    <org.glassfish.jersey>2.17</org.glassfish.jersey>
+    <active.broker.tcp>61616</active.broker.tcp>
+
+    <javax.javaee.version>7.0</javax.javaee.version>
+    <wildfly.version>10.1.0.Final</wildfly.version>
+
+    <docker.deployment.dir>${project.basedir}/deployments</docker.deployment.dir>
+    <docker.server.log.dir>${project.basedir}/logs</docker.server.log.dir>
+    <docker.dependencies.dir>${project.basedir}/dependencies</docker.dependencies.dir>
+    <docker.wildfly.server.up.code>WFLYSRV0025</docker.wildfly.server.up.code>
+  </properties>
+
+  <dependencies>
+
+    <!-- jee -->
+    <dependency>
+      <groupId>javax</groupId>
+      <artifactId>javaee-api</artifactId>
+      <version>${javax.javaee.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-client</artifactId>
+      <version>${activemq.version}</version>
+    </dependency>
+
+    <!-- monitoring -->
+    <dependency>
+      <groupId>io.prometheus</groupId>
+      <artifactId>simpleclient_servlet</artifactId>
+      <version>${prometheus-simpleclient.version}</version>
+    </dependency>
+
+    <!-- junit tests -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-all</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- dependencies used for testing-->
+
+    <!-- bind for slf4j (test scope)-->
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <finalName>${project.artifactId}</finalName>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>${maven-failsafe-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <configuration>
+              <tasks>
+                <mkdir dir="${project.basedir}/deployments"/>
+                <mkdir dir="${project.basedir}/logs"/>
+                <mkdir dir="${project.basedir}/build"/>
+                <mkdir dir="${project.basedir}/dependencies"/>
+
+                <chmod dir="${project.basedir}/deployments" perm="ugo+rwx"/>
+                <chmod dir="${project.basedir}/logs" perm="ugo+rwx"/>
+                <chmod dir="${project.basedir}/build" perm="ugo+rwx"/>
+                <chmod dir="${project.basedir}/dependencies" perm="ugo+rwx"/>
+
+                <copy file="target/${project.artifactId}.war" todir="build"/>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${project.basedir}/src/docker/target</directory>
+              <directory>${project.basedir}/build</directory>
+              <directory>${project.basedir}/logs</directory>
+              <directory>${project.basedir}/dependencies</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <executions>
+          <!--
+              States that the plugin's add-test-source goal is executed at
+              generate-test-sources phase.
+          -->
+          <execution>
+            <id>add-integration-test-sources</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>add-test-source</goal>
+            </goals>
+            <configuration>
+              <!-- Configures the source directory of integration tests. -->
+              <sources>
+                <source>src/test-integration/java</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <configuration>
+          <verbose>true</verbose>
+          <images>
+
+            <image>
+              <name>${project.docker.image-group}/${project.artifactId}:${project.version}</name>
+              <alias>activemq-monitoring-app</alias>
+              <build>
+                <dockerFile>${project.basedir}/Dockerfile</dockerFile>
+                <args>
+                  <ACTIVEMQ_VERSION>${activemq.version}</ACTIVEMQ_VERSION>
+                </args>
+              </build>
+              <!-- mvn docker:start -->
+              <run>
+                <!--<env> </env> -->
+                <labels>
+                  <environment>development</environment>
+                  <version>${project.version}</version>
+                </labels>
+                <namingStrategy>alias</namingStrategy>
+                <ports>
+                  <port>8080:8080</port>
+                  <port>8443:8443</port>
+                  <port>9990:9990</port>
+                  <port>9993:9993</port>
+                  <port>8787:8787</port>
+                </ports>
+                <volumes>
+                  <bind>
+                    <volume>${docker.deployment.dir}:/opt/wildfly/standalone/deployments</volume>
+                    <volume>${docker.server.log.dir}:/opt/wildfly/standalone/log</volume>
+                  </bind>
+                </volumes>
+                <links>
+                  <link>activemq</link>
+                </links>
+                <wait>
+                  <log>${docker.wildfly.server.up.code}</log>
+                  <time>60000</time>
+                </wait>
+                <log>
+                  <prefix>WILDFLY</prefix>
+                  <date>DEFAULT</date>
+                  <color>blue</color>
+                  <!--  <file>${project.basedir}/logs/docker-wildfly.log</file>-->
+                </log>
+              </run>
+            </image>
+          </images>
+        </configuration>
+
+        <!-- Connect start/stop to pre- and post-integration-test phase, respectively
+            if you want to start your docker containers during integration tests -->
+        <executions>
+          <execution>
+            <id>build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+          <!--<execution>
+              <id>start</id>
+              <phase>pre-integration-test</phase>
+              <goals>
+                  &lt;!&ndash; "build" should be used to create the images with the artifact &ndash;&gt;
+                  <goal>start</goal>
+              </goals>
+          </execution>
+          <execution>
+              <id>stop</id>
+              <phase>post-integration-test</phase>
+              <goals>
+                  <goal>stop</goal>
+              </goals>
+          </execution>-->
+        </executions>
+      </plugin>
+
+
+    </plugins>
+
+  </build>
+</project>

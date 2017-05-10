@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.edesdan.activemq.monitoring</groupId>
+    <artifactId>activemq-monitoring-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>activemq</artifactId>
+  <name>activemq</name>
+  <packaging>pom</packaging>
+
+  <properties>
+
+    <docker.log.prefix>ACTIVEMQ</docker.log.prefix>
+    <docker.dockerfile>${project.basedir}/Dockerfile</docker.dockerfile>
+    <docker.image-name>${project.docker.image-group}/activemq:${project.version}</docker.image-name>
+    <docker.image-alias>activemq</docker.image-alias>
+    <activemq.broker.tcp>61616</activemq.broker.tcp>
+    <activemq.stomp>61613</activemq.stomp>
+    <activemq.ui>8161</activemq.ui>
+    <activemq.jmx>1099</activemq.jmx>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-all</artifactId>
+      <version>${activemq.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>${project.artifactId}</finalName>
+
+    <plugins>
+
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <configuration>
+              <tasks>
+                <sequential>
+                  <!-- 1) get activemq distribution package from apache -->
+                  <get
+                      src="https://archive.apache.org/dist/activemq/${activemq.version}/apache-activemq-${activemq.version}-bin.tar.gz"
+                      dest="${project.build.directory}"
+                      verbose="true"
+                      usetimestamp="true"/>
+                  <!-- 2) unpack activemq distribution  -->
+                  <gunzip src="${project.build.directory}/apache-activemq-${activemq.version}-bin.tar.gz"/>
+                  <untar src="${project.build.directory}/apache-activemq-${activemq.version}-bin.tar"
+                         dest="${project.build.directory}"/>
+                  <delete file="${project.build.directory}/apache-activemq-${activemq.version}-bin.tar"/>
+                  <!-- 3) delete unnecessary directories and files from the distribution -->
+                  <delete dir="${project.build.directory}/apache-activemq-${activemq.version}/docs"/>
+                  <delete dir="${project.build.directory}/apache-activemq-${activemq.version}/examples"/>
+                  <delete dir="${project.build.directory}/apache-activemq-${activemq.version}/webapps"/>
+                  <delete dir="${project.build.directory}/apache-activemq-${activemq.version}/webapps-demo"/>
+                  <!-- 4) copy/override config files -->
+                  <copy todir="${project.build.directory}/apache-activemq-${activemq.version}/conf"
+                        overwrite="true">
+                    <fileset dir="${project.basedir}/src/activemq/conf"/>
+                  </copy>
+                  <!-- 5) repack everything -->
+                  <tar destfile="${project.build.directory}/apache-activemq-${activemq.version}.tar"
+                       basedir="${project.build.directory}/apache-activemq-${activemq.version}"/>
+                  <gzip destfile="${project.build.directory}/activemq-${project.version}.tar.gz"
+                        src="${project.build.directory}/apache-activemq-${activemq.version}.tar"/>
+                  <!-- 6) copy the artifact to docker dir -->
+                  <copy file="${project.build.directory}/activemq-${project.version}.tar.gz"
+                        todir="src/docker/target/"/>
+
+                </sequential>
+
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+
+      <!-- 9) add the artifact to deployment phase -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${maven-build-helper-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>attach-distribution</id>
+            <phase>package</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifact>
+                  <file>${project.build.directory}/activemq-${project.version}.tar.gz</file>
+                  <type>tar.gz</type>
+                </artifact>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+
+      <plugin>
+        <artifactId>maven-clean-plugin</artifactId>
+        <configuration>
+          <filesets>
+            <fileset>
+              <directory>${project.basedir}/src/docker/target</directory>
+            </fileset>
+          </filesets>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <version>${maven-docker-plugin.version}</version>
+        <configuration>
+          <showLogs>${docker.image-alias}</showLogs> <!-- must match the alias name -->
+          <verbose>true</verbose>
+          <images>
+            <image>
+              <name>${docker.image-name}</name>
+              <alias>${docker.image-alias}</alias>
+              <!-- mvn docker:build -->
+              <build>
+                <dockerFile>${docker.dockerfile}</dockerFile>
+                <args>
+                  <ACTIVEMQ_VERSION>${project.version}</ACTIVEMQ_VERSION>
+                </args>
+              </build>
+              <!-- mvn docker:start -->
+              <run>
+                <namingStrategy>alias</namingStrategy>
+                <labels>
+                  <environment>development</environment>
+                  <version>${activemq.version}</version>
+                </labels>
+                <ports>
+                  <port>${activemq.broker.tcp}:${activemq.broker.tcp}</port>
+                  <port>${activemq.stomp}:${activemq.stomp}</port>
+                  <port>${activemq.ui}:${activemq.ui}</port>
+                  <port>${activemq.jmx}:${activemq.jmx}</port>
+                </ports>
+                <wait>
+                  <tcp>
+                    <host>0.0.0.0</host>
+                    <ports>
+                      <port>${activemq.broker.tcp}</port>
+                    </ports>
+                  </tcp>
+                  <time>60000</time>
+                </wait>
+                <log>
+                  <prefix>${docker.log.prefix}</prefix>
+                  <date>DEFAULT</date>
+                  <color>green</color>
+                  <!--   <file>docker.log</file>-->
+                </log>
+              </run>
+            </image>
+          </images>
+        </configuration>
+        <executions>
+          <execution>
+            <id>build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>start</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>start</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>stop</id>
+            <phase>post-integration-test</phase>
+            <goals>
+              <goal>stop</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

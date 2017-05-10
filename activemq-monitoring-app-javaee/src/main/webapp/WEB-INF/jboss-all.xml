@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss umlns="urn:jboss:1.0">
+    <jboss-deployment-dependencies xmlns="urn:jboss:deployment-dependencies:1.0">
+    </jboss-deployment-dependencies>
+</jboss>

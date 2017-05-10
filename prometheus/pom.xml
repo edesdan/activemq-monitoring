@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>com.edesdan.activemq.monitoring</groupId>
+    <artifactId>activemq-monitoring-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>prometheus</artifactId>
+  <packaging>pom</packaging>
+  <name>prometheus</name>
+
+  <properties>
+    <docker.wait.log.prometheus.output>Listening on :</docker.wait.log.prometheus.output>
+    <docker.port.map.1>9090:9090</docker.port.map.1>
+    <docker.prometheus.dockerfile>${project.basedir}/Dockerfile</docker.prometheus.dockerfile>
+    <docker.image-name>${project.docker.image-group}/${project.artifactId}:${project.version}</docker.image-name>
+    <docker.image-alias>prometheus</docker.image-alias>
+    <docker.prometheus.prefix>PROMETHEUS</docker.prometheus.prefix>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <configuration>
+          <showLogs>${docker.image-alias}</showLogs> <!-- must match the alias name -->
+          <verbose>true</verbose>
+          <images>
+            <image>
+              <name>${docker.image-name}</name>
+              <alias>${docker.image-alias}</alias>
+              <!-- mvn docker:build -->
+              <build>
+                <dockerFile>${docker.prometheus.dockerfile}</dockerFile>
+              </build>
+              <!-- mvn docker:start -->
+              <run>
+                <namingStrategy>alias</namingStrategy>
+                <labels>
+                  <environment>development</environment>
+                  <version>${project.version}</version>
+                </labels>
+                <ports>
+                  <port>${docker.port.map.1}</port>
+                </ports>
+                <links>
+                  <link>activemq-monitoring-app</link>
+                </links>
+                <wait>
+                  <log>${docker.wait.log.prometheus.output}</log>
+                  <time>30000</time>
+                </wait>
+                <log>
+                  <prefix>${docker.prometheus.prefix}</prefix>
+                  <date>DEFAULT</date>
+                  <color>cyan</color>
+                </log>
+              </run>
+            </image>
+          </images>
+        </configuration>
+        <executions>
+          <execution>
+            <id>build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>

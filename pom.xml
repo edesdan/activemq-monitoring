@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.edesdan.activemq.monitoring</groupId>
+  <artifactId>activemq-monitoring-parent</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>activemq-monitoring-parent</name>
+
+  <modules>
+    <module>activemq</module>
+    <module>activemq-monitoring-app-javaee</module>
+    <module>prometheus</module>
+    <module>graphana</module>
+  </modules>
+
+
+  <properties>
+    <!-- encoding -->
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <!-- java versions -->
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+
+    <failOnMissingWebXml>false</failOnMissingWebXml>
+
+    <!-- ======================================== -->
+    <!-- Dependencies version -->
+    <!-- ======================================== -->
+
+    <!-- logging -->
+    <org.slf4j.version>1.7.21</org.slf4j.version>
+    <!-- logging (test scope) -->
+    <ch.qos.logback.version>1.1.7</ch.qos.logback.version>
+
+    <!-- monitoring -->
+    <activemq.version>5.12.1</activemq.version>
+    <prometheus-simpleclient.version>0.0.21</prometheus-simpleclient.version>
+
+    <!-- unit tests -->
+    <junit.version>4.12</junit.version>
+    <org.mockito.version>1.10.19</org.mockito.version>
+    <activemq-junit-version>5.14.1</activemq-junit-version>
+
+    <!-- docker -->
+    <project.docker.image-group>docker.edesdan.com</project.docker.image-group>
+
+    <!-- maven plugins -->
+    <maven-clean-plugin.version>3.0.0</maven-clean-plugin.version>
+    <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+    <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
+    <maven-scm-plugin.version>1.9.4</maven-scm-plugin.version>
+    <maven-surefire-plugin.version>2.19.1</maven-surefire-plugin.version>
+    <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+    <maven-resources-plugin.version>3.0.1</maven-resources-plugin.version>
+    <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+    <maven-failsafe-plugin.version>2.19.1</maven-failsafe-plugin.version>
+    <maven-war-plugin.version>2.6</maven-war-plugin.version>
+    <maven-antrun-plugin.version>1.7</maven-antrun-plugin.version> <!-- use 1.8 doesn't works on activemq module -->
+    <maven-assembly-plugin.version>2.6</maven-assembly-plugin.version>
+    <maven-docker-plugin.version>0.20.1</maven-docker-plugin.version>
+    <maven-properties-plugin.version>1.0.0</maven-properties-plugin.version>
+    <maven-build-helper-plugin.version>1.7</maven-build-helper-plugin.version>
+    <maven-assembly-plugin.version>2.6</maven-assembly-plugin.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- logging -->
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${org.slf4j.version}</version>
+      </dependency>
+      <!-- use logback as binding for slf4j during testing-->
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>${ch.qos.logback.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- jee -->
+      <dependency>
+        <groupId>javax</groupId>
+        <artifactId>javaee-api</artifactId>
+        <version>${javax.javaee.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <!-- monitoring -->
+      <dependency>
+        <groupId>io.prometheus</groupId>
+        <artifactId>simpleclient_servlet</artifactId>
+        <version>${prometheus-simpleclient.version}</version>
+      </dependency>
+
+      <!-- testing -->
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>${junit.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+        <version>${org.mockito.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.activemq.tooling</groupId>
+        <artifactId>activemq-junit</artifactId>
+        <version>${activemq-junit-version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>${maven-properties-plugin.version}</version>
+      </dependency>
+    </dependencies>
+
+  </dependencyManagement>
+
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>${maven-clean-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${maven-source-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-war-plugin</artifactId>
+          <version>${maven-war-plugin.version}</version>
+          <configuration>
+            <failOnMissingWebXml>false</failOnMissingWebXml>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>${maven-resources-plugin.version}</version>
+        </plugin>
+
+        <!-- specify maven-surfire-plugin (to avoid a bug with arquillian in an old surefire plugin version) -->
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+        </plugin>
+
+        <!-- use maven failsafe for integration-tests -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${maven-failsafe-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>${maven-assembly-plugin.version}</version>
+        </plugin>
+
+        <!-- add source directory for integration-tests -->
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>build-helper-maven-plugin</artifactId>
+          <version>${maven-build-helper-plugin.version}</version>
+        </plugin>
+
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-scm-plugin</artifactId>
+          <version>${maven-scm-plugin.version}</version>
+          <configuration>
+            <connectionType>connection</connectionType>
+          </configuration>
+        </plugin>
+
+        <plugin>
+          <groupId>io.fabric8</groupId>
+          <artifactId>docker-maven-plugin</artifactId>
+          <version>${maven-docker-plugin.version}</version>
+        </plugin>
+
+      </plugins>
+    </pluginManagement>
+
+    <!-- Plugin usages: plugin execution on parent-->
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+      </plugin>
+
+    </plugins>
+
+  </build>
+
+</project>

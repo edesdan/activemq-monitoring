@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <groupId>com.edesdan.activemq.monitoring</groupId>
+    <artifactId>activemq-monitoring-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+
+  <artifactId>graphana</artifactId>
+  <packaging>pom</packaging>
+  <name>graphana</name>
+
+  <properties>
+    <docker.graphana.dockerfile>${project.basedir}/Dockerfile</docker.graphana.dockerfile>
+    <docker.image-name>${project.docker.image-group}/${project.artifactId}:${project.version}</docker.image-name>
+    <docker.image-alias>graphana</docker.image-alias>
+    <docker.graphana.prefix>GRAPHANA</docker.graphana.prefix>
+    <docker-graphana.port>3000</docker-graphana.port>
+  </properties>
+
+  <build>
+    <plugins>
+
+      <!--<plugin>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>${maven-antrun-plugin.version}</version>
+          <executions>
+              <execution>
+                  <phase>package</phase>
+                  <configuration>
+                      <tasks>
+                          <mkdir dir="${project.basedir}/data"/>
+
+                          <chmod dir="${project.basedir}/data" perm="ugo+rwx"/>
+                      </tasks>
+                  </configuration>
+                  <goals>
+                      <goal>run</goal>
+                  </goals>
+              </execution>
+          </executions>
+      </plugin>
+      <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <configuration>
+              <filesets>
+                  <fileset>
+                      <directory>${project.basedir}/data</directory>
+                  </fileset>
+              </filesets>
+          </configuration>
+      </plugin>-->
+
+      <plugin>
+        <groupId>io.fabric8</groupId>
+        <artifactId>docker-maven-plugin</artifactId>
+        <configuration>
+          <showLogs>${docker.image-alias}</showLogs> <!-- must match the alias name -->
+          <verbose>true</verbose>
+          <images>
+            <image>
+              <name>${docker.image-name}</name>
+              <alias>${docker.image-alias}</alias>
+              <!-- mvn docker:build -->
+              <build>
+                <dockerFile>${docker.graphana.dockerfile}</dockerFile>
+              </build>
+              <!-- mvn docker:start -->
+              <run>
+                <env>
+                  <!-- <GF_AUTH_DISABLE_LOGIN_FORM>true</GF_AUTH_DISABLE_LOGIN_FORM>-->
+                  <GF_AUTH.ANONYMOUS_ENABLED>true</GF_AUTH.ANONYMOUS_ENABLED>
+                  <GF_SECURITY_ADMIN_PASSWORD>admin</GF_SECURITY_ADMIN_PASSWORD>
+                </env>
+                <namingStrategy>alias</namingStrategy>
+                <labels>
+                  <environment>development</environment>
+                  <version>${project.version}</version>
+                </labels>
+                <ports>
+                  <port>${docker-graphana.port}:${docker-graphana.port}</port>
+                </ports>
+                <!-- TODO better volume management
+                <volumes>
+                      <bind>
+                          <volume>${project.basedir}/data:/var/lib/grafana</volume>
+                      </bind>
+                  </volumes>-->
+                <links>
+                  <link>prometheus</link>
+                </links>
+                <wait>
+                  <tcp>
+                    <host>0.0.0.0</host>
+                    <ports>
+                      <port>${docker-graphana.port}</port>
+                    </ports>
+                  </tcp>
+                  <time>30000</time>
+                </wait>
+                <log>
+                  <prefix>${docker.graphana.prefix}</prefix>
+                  <date>DEFAULT</date>
+                  <color>cyan</color>
+                </log>
+              </run>
+            </image>
+          </images>
+        </configuration>
+        <executions>
+          <execution>
+            <id>build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>build</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+</project>

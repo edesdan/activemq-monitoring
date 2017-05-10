@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="activemq-monitoring-app" />
+        <module name="ghibli-activemq-monitoring-agent" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="activemq" target="1.7" />
+      <module name="activemq-monitoring-app" target="1.7" />
+      <module name="activemq-monitoring-parent" target="1.7" />
+      <module name="ghibli-activemq-monitoring-agent" target="1.5" />
+      <module name="ghibli-activemq-standalone" target="1.7" />
+      <module name="graphana" target="1.7" />
+      <module name="prometheus" target="1.7" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
