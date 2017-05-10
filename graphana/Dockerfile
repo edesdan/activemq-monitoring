@@ -26,16 +26,12 @@ RUN mkdir /var/lib/grafana/dashboards
 # copy dashboards
 ADD src/docker/graphana/dashboards /var/lib/grafana/dashboards
 
-#ADD src/docker/graphana/dashboards /usr/share/grafana/public/dashboards
-
-RUN chown -R grafana:grafana /var/lib/grafana \
-    && chown -R grafana:grafana /etc/grafana
+ADD src/docker/graphana/dashboards /usr/share/grafana/public/dashboards
 
 COPY src/docker/graphana/run.sh /run.sh
 
 RUN chown -R grafana:grafana /run.sh \
     && chmod u+x /run.sh
-
 
 CMD ["/run.sh"]
 
